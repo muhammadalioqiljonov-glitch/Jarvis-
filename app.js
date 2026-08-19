@@ -6,16 +6,33 @@ const status = document.querySelector('#status');
 const subtitle = document.querySelector('#subtitle');
 
 let recognition;
+let voiceMode = false;
+let isProcessing = false;
+let isSpeaking = false;
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SpeechRecognition) {
   recognition = new SpeechRecognition();
   recognition.lang = 'uz-UZ'; recognition.interimResults = false; recognition.continuous = false;
   recognition.onstart = () => { document.body.classList.add('listening'); status.innerHTML = '<i></i> Tinglayapman'; subtitle.textContent = 'Gapiring, eshitib turibman...'; };
-  recognition.onend = () => { document.body.classList.remove('listening'); status.innerHTML = '<i></i> Tayyor'; subtitle.textContent = 'Mikrofonni bosing va gapiring.'; };
-  recognition.onerror = () => addMessage('Mikrofon yoki nutqni aniqlash ishlamadi. Matn yozib yuboring.', 'assistant');
-  recognition.onresult = e => send(e.results[0][0].transcript);
+  recognition.onend = () => {
+    document.body.classList.remove('listening');
+    if (voiceMode && !isProcessing && !isSpeaking) setTimeout(startListening, 250);
+    else if (!voiceMode) { status.innerHTML = '<i></i> Tayyor'; subtitle.textContent = 'Mikrofonni bosing va gapiring.'; }
+  };
+  recognition.onerror = event => {
+    if (event.error !== 'no-speech' && event.error !== 'aborted') addMessage('Mikrofon yoki nutqni aniqlash ishlamadi. Chrome ruxsatini tekshiring.', 'assistant');
+  };
+  recognition.onresult = e => { recognition.stop(); send(e.results[0][0].transcript); };
 } else { mic.disabled = true; subtitle.textContent = 'Brauzeringiz ovozli aniqlashni qo‘llamaydi. Chrome ishlating.'; }
-mic.addEventListener('click', () => recognition?.start());
+function startListening() {
+  if (!recognition || isProcessing || isSpeaking) return;
+  try { recognition.start(); } catch (_) { /* already active */ }
+}
+mic.addEventListener('click', () => {
+  voiceMode = !voiceMode;
+  if (voiceMode) startListening();
+  else { recognition?.stop(); speechSynthesis?.cancel(); status.innerHTML = '<i></i> Tayyor'; subtitle.textContent = 'Ovozli rejim o‘chirildi.'; }
+});
 form.addEventListener('submit', e => { e.preventDefault(); send(input.value); });
 
 function addMessage(text, role) {
@@ -26,15 +43,20 @@ function addMessage(text, role) {
 }
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel(); const voice = new SpeechSynthesisUtterance(text); voice.lang = 'uz-UZ'; voice.rate = 1; speechSynthesis.speak(voice);
+  isSpeaking = true; speechSynthesis.cancel(); const voice = new SpeechSynthesisUtterance(text); voice.lang = 'uz-UZ'; voice.rate = 1;
+  voice.onend = () => { isSpeaking = false; if (voiceMode) startListening(); };
+  voice.onerror = () => { isSpeaking = false; if (voiceMode) startListening(); };
+  speechSynthesis.speak(voice);
 }
 async function send(text) {
-  text = text.trim(); if (!text) return; input.value = ''; addMessage(text, 'user');
+  text = text.trim(); if (!text) return; isProcessing = true; input.value = ''; addMessage(text, 'user');
   const pending = addMessage('O‘ylayapman...', 'assistant');
   try {
     const response = await fetch('/api/jarvis', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({message:text}) });
     const data = await response.json(); if (!response.ok) throw new Error(data.error);
     pending.querySelector('p').textContent = data.reply; speak(data.reply);
   } catch (error) { pending.querySelector('p').textContent = error.message || 'Ulanishda xatolik yuz berdi.'; }
+  isProcessing = false;
+  if (voiceMode && !isSpeaking) startListening();
   messages.scrollTop = messages.scrollHeight;
 }
