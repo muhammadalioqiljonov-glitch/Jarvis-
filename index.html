@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070b16" />
+    <title>JARVIS — Voice Assistant</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header>
+        <div class="brand"><span class="brand-mark">J</span><span>JARVIS</span></div>
+        <div id="status" class="status"><i></i> Tayyor</div>
+      </header>
+
+      <section class="hero" aria-labelledby="title">
+        <p class="eyebrow">Shaxsiy ovozli yordamchingiz</p>
+        <h1 id="title">Salom, men <em>Jarvis</em>.</h1>
+        <p id="subtitle" class="subtitle">Mikrofonni bosing va gapiring.</p>
+
+        <button id="micButton" class="mic" aria-label="Gapirishni boshlash">
+          <span class="pulse"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V20H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-4.1A5 5 0 0 0 17 11Z"/></svg>
+        </button>
+        <p class="hint">Masalan: “Bugun reja tuzib ber” yoki “Soat nechi?”</p>
+      </section>
+
+      <section class="chat" aria-label="Suhbat tarixi">
+        <div id="messages" class="messages" aria-live="polite">
+          <article class="message assistant"><span>J</span><p>Assalomu alaykum! Sizga qanday yordam beray?</p></article>
+        </div>
+        <form id="chatForm" class="composer">
+          <input id="textInput" autocomplete="off" placeholder="Jarvisga yozing..." aria-label="Xabar" />
+          <button type="submit" aria-label="Yuborish">➜</button>
+        </form>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
